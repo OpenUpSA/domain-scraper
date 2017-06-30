@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from urlparse import urlparse
-from govzasurvey.items import GovzasurveyItem
+from urlparse import urlparse, urlunparse
+from govzasurvey.items import GovzasurveyItem, RobotsTXTItem
+from os.path import splitext
+
+skip_extensions = set([
+    'jpg', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'gz', 'mp3',
+    'ppt', 'pptx', 'mp4', 'avi', 'zip', 'jpeg', 'gif', 'png', 'bmp',
+])
 
 
 class GovzaSpider(scrapy.Spider):
@@ -15,6 +21,10 @@ class GovzaSpider(scrapy.Spider):
         item['has_wordpress'] = has_wordpress
         yield item
 
+        scheme, netloc, path, params, query, fragment = urlparse(response.url)
+        robotsurl = urlunparse((scheme, netloc, '/robots.txt', None, None, None))
+        yield scrapy.Request(robotsurl, callback=self.parse_robotstxt)
+
         for href in response.css("a::attr('href')"):
             url = response.urljoin(href.extract())
             if url.startswith('mailto:') and '@' in url:
@@ -25,12 +35,23 @@ class GovzaSpider(scrapy.Spider):
             if not parsed.netloc:
                 url = response.urljoin(url)
 
+            # skip obvious non-html
+            path, extension = splitext(parsed.path)
+            if extension and extension[1:] in skip_extensions:
+                continue
+
             # remove qs
             if '?' in url:
                 url = url.split('?')[0]
 
             # crawl it
             yield scrapy.Request(url)
+
+    def parse_robotstxt(self, response):
+        item = RobotsTXTItem()
+        item['url'] = response.url
+        item['robotstxt'] = response.text
+
 
     start_urls = [
         "http://www.gov.za/",

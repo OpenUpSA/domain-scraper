@@ -9,6 +9,10 @@ import scrapy
 
 
 class GovzasurveyItem(scrapy.Item):
-    # define the fields for your item here like:
     url = scrapy.Field()
     has_wordpress = scrapy.Field()
+
+
+class RobotsTXTItem(scrapy.Item):
+    url = scrapy.Field()
+    robotstxt = scrapy.Field()
