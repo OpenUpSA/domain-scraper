@@ -8,7 +8,7 @@
 import scrapy
 
 
-class GovzasurveyItem(scrapy.Item):
+class PageItem(scrapy.Item):
     url = scrapy.Field()
     has_wordpress = scrapy.Field()
 
@@ -16,3 +16,12 @@ class GovzasurveyItem(scrapy.Item):
 class RobotsTXTItem(scrapy.Item):
     url = scrapy.Field()
     robotstxt = scrapy.Field()
+
+
+class NetlocItem(scrapy.Item):
+    netloc = scrapy.Field()
+
+
+class FileItem(scrapy.Item):
+    url = scrapy.Field()
+    label = scrapy.Field()
