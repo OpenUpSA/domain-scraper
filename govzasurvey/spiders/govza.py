@@ -34,6 +34,7 @@ class GovzaSpider(scrapy.Spider):
 
         netloc_item = NetlocItem()
         netloc_item['netloc'] = netloc
+        yield netloc_item
 
         for anchor in response.xpath("//a"):
             href = anchor.xpath("@href").extract()
@@ -62,6 +63,7 @@ class GovzaSpider(scrapy.Spider):
                 file_item = FileItem()
                 file_item['url'] = url
                 file_item['label'] = label
+                yield file_item
                 continue
 
             # remove qs
@@ -80,6 +82,7 @@ class GovzaSpider(scrapy.Spider):
         item = RobotsTXTItem()
         item['url'] = response.url
         item['robotstxt'] = response.text
+        yield item
 
 
     start_urls = [
