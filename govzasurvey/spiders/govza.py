@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from urlparse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse
 from govzasurvey.items import PageItem, RobotsTXTItem, NetlocItem, FileItem
 from os.path import splitext
 import logging
 
 logger = logging.getLogger(__name__)
 
-skip_extensions = set([
+file_extensions = set([
     'jpg', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'gz', 'mp3',
     'ppt', 'pptx', 'mp4', 'avi', 'zip', 'jpeg', 'gif', 'png', 'bmp',
     'accdb', 'cdf', 'csv', 'dbf', 'dem', 'dta', 'e00', 'esri', 'fits',
@@ -15,6 +15,8 @@ skip_extensions = set([
     'matlab', 'mdb', 'nsf', 'odf', 'ods', 'rdata', 'rda', 'sas', 'sdts',
     'siard', 'spss', 'por', 'sav',
 ])
+
+netlocs = dict()
 
 
 class GovzaSpider(scrapy.Spider):
@@ -29,12 +31,20 @@ class GovzaSpider(scrapy.Spider):
         yield page_item
 
         scheme, netloc, path, params, query, fragment = urlparse(response.url)
-        robotsurl = urlunparse((scheme, netloc, '/robots.txt', None, None, None))
-        yield scrapy.Request(robotsurl, callback=self.parse_robotstxt)
 
-        netloc_item = NetlocItem()
-        netloc_item['netloc'] = netloc
-        yield netloc_item
+        if netloc in netlocs:
+            netlocs[netloc] += 1
+        else:
+            netlocs[netloc] = 1
+
+            # try the robots.txt the first time we see a netloc
+            robotsurl = urlunparse((scheme, netloc, '/robots.txt', None, None, None))
+            yield scrapy.Request(robotsurl, callback=self.parse_robotstxt)
+
+            # yield the netloc the first time we see it
+            netloc_item = NetlocItem()
+            netloc_item['netloc'] = netloc
+            yield netloc_item
 
         for anchor in response.xpath("//a"):
             href = anchor.xpath("@href").extract()
@@ -43,23 +53,36 @@ class GovzaSpider(scrapy.Spider):
             else:
                 # Skip in-page navigation anchor points
                 continue
+
             label = anchor.xpath("text()").extract()
+
             if label:
                 label = label[0]
             else:
                 label = None
-            url = response.urljoin(href)
-            if url.startswith('mailto:') and '@' in url:
-                url = 'http://' + url.split('@')[1]
 
-            # ensure absolute
+            # Make it absolute
+            url = response.urljoin(href)
+
+            # If it's an email link, use the domain as the URL
+            if url.startswith('mailto:'):
+                if '@' in url:
+                    url = 'http://' + url.split('@')[1]
+                else:
+                    continue
+
+            # only handle the first 1000 links discovered for a given netloc
+            # to try and minimise the impact of relative links that just append and
+            # append and keep returning 200
             parsed = urlparse(url)
-            if not parsed.netloc:
-                url = response.urljoin(url)
+            netloc_seen = netlocs.get(parsed.netloc, 0)
+            if netloc_seen >= 1000:
+                logger.info("Skipping %s - already seen enough from %s", url, parsed.netloc)
+                continue
 
             # log but skip obvious non-html (before stripping QS)
             path, extension = splitext(parsed.path)
-            if extension and extension[1:] in skip_extensions:
+            if extension and extension[1:] in file_extensions:
                 file_item = FileItem()
                 file_item['url'] = url
                 file_item['label'] = label
