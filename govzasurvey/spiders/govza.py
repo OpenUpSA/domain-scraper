@@ -57,7 +57,7 @@ class GovzaSpider(scrapy.Spider):
             label = anchor.xpath("text()").extract()
 
             if label:
-                label = label[0]
+                label = label[0].strip()
             else:
                 label = None
 

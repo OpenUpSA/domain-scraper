@@ -22,7 +22,7 @@ NEWSPIDER_MODULE = 'govzasurvey.spiders'
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -90,3 +90,8 @@ HTTPCACHE_DIR = 'httpcache'
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 DOWNLOAD_MAXSIZE = 1024 * 1024 * 500 # 500KB
+
+# https://docs.scrapy.org/en/latest/topics/broad-crawls.html#use-the-right-scheduler-priority-queue
+SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
+
+LOG_LEVEL = 'INFO'
