@@ -19,41 +19,6 @@ over time to be able to identify changes, but not to provide analytical
 functionality. Search/analysis should probably be built on top of this data or
 some transformation of this data.
 
-
-scrape
-
-  - id
-  - start timestamp
-
-
-page
-
-  - observation
-  - html
-  - sha256
-  - etag
-
-
-file
-
-- observation
-  - key
-  - sha256
-  - etag
-
-
-canonical_url
-
-  - url
-
-
-observation
-
-  - scrape
-  - url
-  - canonical_url
-  - referrer
-
 -----
 
     have a url
