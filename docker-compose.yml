@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+
+  scraper:
+    build:
+      context: .
+      args:
+        USER_ID: ${USER_ID:-1001}
+        GROUP_ID: ${GROUP_ID:-1001}
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://scraper:scraper@db/scraper
+
+  db:
+    image: postgres:11.6
+    environment:
+      - POSTGRES_USER=scraper
+      - POSTGRES_PASSWORD=scraper
+      - POSTGRES_DB=scraper
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
