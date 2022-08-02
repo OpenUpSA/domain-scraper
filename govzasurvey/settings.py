@@ -9,6 +9,8 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 
+import os
+
 BOT_NAME = 'govzasurvey'
 
 SPIDER_MODULES = ['govzasurvey.spiders']
@@ -64,9 +66,9 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'govzasurvey.pipelines.GovzasurveyPipeline': 300,
-#}
+ITEM_PIPELINES = {
+    'govzasurvey.pipelines.ArchivePipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -95,3 +97,5 @@ DOWNLOAD_MAXSIZE = 1024 * 1024 * 500 # 500KB
 SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
 
 LOG_LEVEL = 'INFO'
+
+DATABASE_URL = os.environ["DATABASE_URL"]
