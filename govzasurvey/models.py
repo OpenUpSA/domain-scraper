@@ -17,6 +17,10 @@ class Scrape(Base):
 
 
 class Page(Base):
+    """
+    The content of a page
+    """
+
     __tablename__ = "page"
 
     id = Column(Integer, primary_key=True)
@@ -25,10 +29,14 @@ class Page(Base):
     )
     observations = relationship("PageObservation", back_populates="page")
     html = Column(String, nullable=False)
-    sha256 = Column(String, nullable=False)
+    sha256 = Column(String, nullable=False, unique=True)
 
 
 class PageObservation(Base):
+    """
+    An observation of a given page
+    """
+
     __tablename__ = "page_observation"
 
     id = Column(Integer, primary_key=True)
@@ -53,7 +61,7 @@ class File(Base):
     )
     observations = relationship("FileObservation", back_populates="file")
     content_type = Column(String, nullable=False)
-    sha256 = Column(String, nullable=False)
+    sha256 = Column(String, nullable=False, unique=True)
     content_disposition_filename = Column(String, nullable=False)
 
 class FileObservation(Base):

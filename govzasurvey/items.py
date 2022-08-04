@@ -10,7 +10,10 @@ import scrapy
 
 class PageItem(scrapy.Item):
     url = scrapy.Field()
-    has_wordpress = scrapy.Field()
+    referrer = scrapy.Field()
+    etag = scrapy.Field()
+    html = scrapy.Field()
+    scrape_timestamp = scrapy.Field()
 
 
 class RobotsTXTItem(scrapy.Item):

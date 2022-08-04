@@ -24,10 +24,11 @@ class GovzaSpider(scrapy.Spider):
     allowed_domains = ['gov.za']
 
     def parse(self, response):
-        has_wordpress = 'wordpress' in response.text.lower()
         page_item = PageItem()
         page_item['url'] = response.url
-        page_item['has_wordpress'] = has_wordpress
+        page_item['referrer'] = response.url
+        page_item['etag'] = response.headers.get("etag", None)
+        page_item['html'] = response.text
         yield page_item
 
         scheme, netloc, path, params, query, fragment = urlparse(response.url)
@@ -61,7 +62,7 @@ class GovzaSpider(scrapy.Spider):
             else:
                 label = None
 
-            # Make it absolute
+            # Make it absolute if it is not
             url = response.urljoin(href)
 
             # If it's an email link, use the domain as the URL
@@ -70,6 +71,13 @@ class GovzaSpider(scrapy.Spider):
                     url = 'http://' + url.split('@')[1]
                 else:
                     continue
+
+            if url.startswith('javascript:'):
+                continue
+            if url.startswith('mailto:'):
+                continue
+            if url.startswith('tel'):
+                continue
 
             # only handle the first 1000 links discovered for a given netloc
             # to try and minimise the impact of relative links that just append and
