@@ -24,11 +24,22 @@ class GovzaSpider(scrapy.Spider):
     allowed_domains = ['gov.za']
 
     def parse(self, response):
+        try:
+            page_text = response.text
+        except AttributeError as e:
+            if e.args[0] == "Response content isn't text":
+                file_item = FileItem()
+                file_item["url"] = response.url
+                yield file_item
+                return
+            else:
+                raise e
+
         page_item = PageItem()
         page_item['url'] = response.url
         page_item['referrer'] = response.url
         page_item['etag'] = response.headers.get("etag", None)
-        page_item['html'] = response.text
+        page_item['html'] = page_text
         yield page_item
 
         scheme, netloc, path, params, query, fragment = urlparse(response.url)
