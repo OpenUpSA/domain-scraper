@@ -68,6 +68,7 @@ DEFAULT_REQUEST_HEADERS = {
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'govzasurvey.pipelines.PagePipeline': 300,
+    'govzasurvey.pipelines.FilePipeline': 301,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
