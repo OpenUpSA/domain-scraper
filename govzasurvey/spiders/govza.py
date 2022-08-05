@@ -4,6 +4,9 @@ from urllib.parse import urlparse, urlunparse
 from govzasurvey.items import PageItem, RobotsTXTItem, NetlocItem, FileItem
 from os.path import splitext
 import logging
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from ..models import Scrape
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +19,30 @@ file_extensions = set([
     'siard', 'spss', 'por', 'sav',
 ])
 
+infinite_scrape_safe_netlocs = {
+    "www.dwa.gov.za",
+}
+
 netlocs = dict()
 
 
 class GovzaSpider(scrapy.Spider):
     name = 'govza'
     allowed_domains = ['gov.za']
+
+    def __init__(self, scrape, *args, **kwargs):
+        self.scrape = scrape
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        database_url = crawler.settings["DATABASE_URL"]
+        engine = create_engine(database_url)
+        session = Session(engine)
+        scrape = Scrape()
+        session.add(scrape)
+        session.commit()
+        session.close()
+        return super().from_crawler(crawler, scrape, *args, **kwargs)
 
     def parse(self, response):
         try:
@@ -87,7 +108,9 @@ class GovzaSpider(scrapy.Spider):
                 continue
             if url.startswith('mailto:'):
                 continue
-            if url.startswith('tel'):
+            if url.startswith('tel:'):
+                continue
+            if url.startswith('fax:'):
                 continue
 
             # only handle the first 1000 links discovered for a given netloc
@@ -95,7 +118,7 @@ class GovzaSpider(scrapy.Spider):
             # append and keep returning 200
             parsed = urlparse(url)
             netloc_seen = netlocs.get(parsed.netloc, 0)
-            if netloc_seen >= 1000:
+            if netloc_seen >= 1000 and parsed.netloc not in infinite_scrape_safe_netlocs:
                 logger.info("Skipping %s - already seen enough from %s", url, parsed.netloc)
                 continue
 
