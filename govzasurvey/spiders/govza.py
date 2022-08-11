@@ -62,7 +62,7 @@ class GovzaSpider(scrapy.Spider):
 
         page_item = PageItem()
         page_item['url'] = response.url
-        page_item['referrer'] = response.url
+        page_item['referrer'] = response.headers.get("referer", None)
         page_item['etag'] = response.headers.get("etag", None)
         page_item['html'] = page_text
         yield page_item
@@ -132,17 +132,13 @@ class GovzaSpider(scrapy.Spider):
                 file_item = FileItem()
                 file_item['url'] = url
                 file_item['label'] = label
+                file_item['referrer'] = response.url
                 yield file_item
                 continue
 
             # remove qs
             if '?' in url:
                 url = url.split('?')[0]
-
-            # avoid endless expansion
-            if len(url) > 300:
-                logger.info("Skipping url > 300 chars %s", url)
-                continue
 
             # crawl it
             yield scrapy.Request(url)
