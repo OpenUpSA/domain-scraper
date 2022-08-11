@@ -10,6 +10,8 @@ from scrapy.pipelines.media import MediaPipeline
 from urllib.parse import urlparse
 from os.path import splitext
 import cgi
+import boto3
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +67,7 @@ class PagePipeline(object):
 
 
 def get_content_disposition_unsafe_filename(response):
-    content_disposition = response.headers["content-disposition"]
+    content_disposition = response.headers.get("content-disposition", None)
     if content_disposition:
         value, params = cgi.parse_header(content_disposition)
         if "filename" in params:
@@ -87,13 +89,14 @@ def make_key(sha256, content_disposition_unsafe_filename, url):
 
 
 class FilePipeline(MediaPipeline):
-    def __init__(self, database_url, s3_bucket_name, aws_key_id, aws_key_secret):
+    def __init__(self, database_url, s3_bucket_name, aws_key_id, aws_key_secret, s3_endpoint_url):
         self.database_url = database_url
         self.download_func = None  # A MediaPipeline expected attribute
         self.handle_httpstatus_list = None  # A MediaPipeline expected attribute
         self.s3_bucket_name = s3_bucket_name
         self.aws_key_id = aws_key_id
         self.aws_key_secret = aws_key_secret
+        self.s3_endpoint_url = s3_endpoint_url
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -101,13 +104,22 @@ class FilePipeline(MediaPipeline):
         database_url = crawler.settings["DATABASE_URL"]
         return cls(
             database_url=database_url,
-            s3_bucket_name=crawler.settings.get("S3_BUCKET_NAME"),
-            aws_key_id=crawler.settings.get("AWS_KEY_ID"),
-            aws_key_secret=crawler.settings.get("AWS_KEY_SECRET"),
+            s3_bucket_name=crawler.settings.get("AWS_STORAGE_BUCKET_NAME"),
+            aws_key_id=crawler.settings.get("AWS_ACCESS_KEY_ID"),
+            aws_key_secret=crawler.settings.get("AWS_SECRET_ACCESS_KEY"),
+            s3_endpoint_url=crawler.settings.get("AWS_S3_ENDPOINT_URL"),
         )
 
     def open_spider(self, spider, *args, **kwargs):
         self.engine = create_engine(self.database_url)
+        self.spider = spider
+        self.s3 = boto3.client(
+            "s3",
+            endpoint_url=self.s3_endpoint_url,
+            region_name="eu-west-1",
+            aws_access_key_id=self.aws_key_id,
+            aws_secret_access_key=self.aws_key_secret
+        )
         return super().open_spider(spider, *args, **kwargs)
 
     def close_spider(self, spider):
@@ -116,7 +128,7 @@ class FilePipeline(MediaPipeline):
     def seen_this_scrape(self, session, url):
         return (
             session.query(FileObservation)
-            .filter(FileObservation.url == url, FileObservation.scrape == self.scrape)
+            .filter(FileObservation.url == url, FileObservation.scrape_id == self.spider.scrape_id)
             .one_or_none()
         )
 
@@ -133,8 +145,8 @@ class FilePipeline(MediaPipeline):
             with Session(self.engine) as session:
                 headers = {}
 
-                if not self.seen_this_scrape(item["url"]):
-                    latest_observation = self.latest_observation(item["url"])
+                if not self.seen_this_scrape(session, item["url"]):
+                    latest_observation = self.latest_observation(session, item["url"])
                     if latest_observation:
                         if latest_observation.etag:
                             headers["If-None-Match"] = latest_observation.etag
@@ -144,7 +156,7 @@ class FilePipeline(MediaPipeline):
                     logger.debug(f'Skipping {item["url"]} already seen this scrape')
         return []
 
-    def get_file_record(self, sha256):
+    def get_file_record(self, session, sha256):
         return session.query(File).filter(File.sha256 == sha256).one_or_none()
 
     def upload_file(self, key, content, content_type):
@@ -171,7 +183,7 @@ class FilePipeline(MediaPipeline):
                     file_sha256.update(response.body)
                     file_sha256_digest = file_sha256.hexdigest()
 
-                    file_record = self.get_file_record(file_sha256_digest)
+                    file_record = self.get_file_record(session, file_sha256_digest)
 
                     if not file_record:
                         content_type = response.headers["content-type"].decode("utf-8")
@@ -189,7 +201,7 @@ class FilePipeline(MediaPipeline):
                         session.add(file_record)
 
                 file_observation = FileObservation(
-                    scrape=self.scrape,
+                    scrape=self.spider.scrape,
                     file=file_record,
                     url=item["url"],
                     referrer=item["referrer"],

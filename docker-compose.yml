@@ -14,6 +14,13 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql://scraper:scraper@db/scraper
+      - AWS_ACCESS_KEY_ID=minio-access-key
+      - AWS_SECRET_ACCESS_KEY=minio-secret-key
+      - AWS_STORAGE_BUCKET_NAME=scraper-storage
+      - AWS_S3_ENDPOINT_URL=http://minio:9000
+    depends_on:
+      - minio-client
+      - minio
 
   db:
     image: postgres:11.6
@@ -24,5 +31,32 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  minio:
+    image: "minio/minio:RELEASE.2019-10-12T01-39-57Z"
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+    environment:
+      - MINIO_ACCESS_KEY=minio-access-key
+      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_DOMAIN=minio
+    command: minio --compat server data
+
+  minio-client:
+    image: "minio/mc"
+    depends_on:
+      - minio
+    environment:
+      - MINIO_ACCESS_KEY=minio-access-key
+      - MINIO_SECRET_KEY=minio-secret-key
+      - MINIO_DOMAIN=minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc mb scraper-storage;
+      /usr/bin/mc policy set public scraper-storage;
+      "
+
 volumes:
   db-data:
+  minio-data:

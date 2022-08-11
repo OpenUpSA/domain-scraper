@@ -30,8 +30,9 @@ class GovzaSpider(scrapy.Spider):
     name = 'govza'
     allowed_domains = ['gov.za']
 
-    def __init__(self, scrape, *args, **kwargs):
+    def __init__(self, scrape, scrape_id, *args, **kwargs):
         self.scrape = scrape
+        self.scrape_id = scrape_id
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
@@ -41,8 +42,11 @@ class GovzaSpider(scrapy.Spider):
         scrape = Scrape()
         session.add(scrape)
         session.commit()
-        session.close()
-        return super().from_crawler(crawler, scrape, *args, **kwargs)
+
+        # session.expire(scrape)
+        # session.expunge(scrape)
+        # session.close()
+        return super().from_crawler(crawler, scrape, scrape.id, *args, **kwargs)
 
     def parse(self, response):
         try:
