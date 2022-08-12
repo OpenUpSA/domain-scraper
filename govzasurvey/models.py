@@ -86,4 +86,5 @@ class FileObservation(Base):
     url = Column(String, nullable=False)
     referrer = Column(String, nullable=False)
     etag = Column(String, nullable=True)
+    last_modified = Column(String, nullable=True)
     content_disposition_unsafe_filename = Column(String, nullable=True)

@@ -66,8 +66,16 @@ class PagePipeline(object):
         return item
 
 
+def get_response_header_str(response, name):
+    value_bytes = response.headers.get(name, None)
+    if value_bytes:
+        return value_bytes.decode("utf-8")
+    else:
+        return None
+
+
 def get_content_disposition_unsafe_filename(response):
-    content_disposition = response.headers.get("content-disposition", None)
+    content_disposition = get_response_header_str(response, "content-disposition")
     if content_disposition:
         value, params = cgi.parse_header(content_disposition)
         if "filename" in params:
@@ -158,16 +166,17 @@ class FilePipeline(MediaPipeline):
                             session, item["url"]
                         )
                         if latest_observation:
+                            meta["file"] = latest_observation.file
+                            # the scrapy cache seems to be interfering with our etag/if-none-match
+                            # submission and we don't need to cache it when using if-none-match
+                            # with the etag in the archive anyway
                             if latest_observation.etag:
-                                logger.info(
-                                    (
-                                        f"Using etag {latest_observation.etag} from "
-                                        f'latest observation for {item["url"]}'
-                                    )
-                                )
-                                meta["latest_observation"] = latest_observation
-                                headers["If-None-Match"] = latest_observation.etag
-
+                                headers["if-none-match"] = latest_observation.etag
+                                meta["dont_cache"] = True
+                            if latest_observation.last_modified:
+                                headers["if-modified-since"] = latest_observation.last_modified
+                                meta["dont_cache"] = True
+                            logger.debug(f"Requsting {item['url']} {headers}")
                         return [Request(item["url"], headers=headers, meta=meta)]
                     else:
                         logger.debug(f'Skipping {item["url"]} already seen this scrape')
@@ -197,13 +206,15 @@ class FilePipeline(MediaPipeline):
             with Session(self.engine) as session:
                 file_record = None
                 etag = None
+                last_modified = None
 
                 if response.status == 304:
-                    logger.info("%s already exists and is UP TO DATE", request.url)
-                    etag = request.headers["If-None-Match"]
-                    file_record = response.meta["latest_observation"].file
+                    logger.debug("%s already exists and is UP TO DATE", request.url)
+                    etag = request.headers.get("if-none-match", None)
+                    las_modified = request.headers.get("if-modified-since", None)
+                    file_record = response.meta["file"]
                 elif response.status == 200:
-                    logger.info("%s already exists and is NOT up to date", request.url)
+                    logger.debug("%s didnt exist yet or was NOT up to date", request.url)
                     file_sha256 = hashlib.sha256()
                     file_sha256.update(response.body)
                     file_sha256_digest = file_sha256.hexdigest()
@@ -225,11 +236,8 @@ class FilePipeline(MediaPipeline):
                         )
                         session.add(file_record)
 
-                    etag_bytes = response.headers.get("etag", None)
-                    if etag_bytes:
-                        etag = etag_bytes.decode("utf-8")
-                    else:
-                        etag = None
+                etag = get_response_header_str(response, "etag")
+                last_modified = get_response_header_str(response, "last-modified")
 
                 file_observation = FileObservation(
                     scrape=self.spider.scrape,
@@ -237,6 +245,7 @@ class FilePipeline(MediaPipeline):
                     url=item["url"],
                     referrer=item["referrer"],
                     etag=etag,
+                    last_modified=last_modified,
                     content_disposition_unsafe_filename=content_disposition_unsafe_filename,
                 )
                 session.add(file_observation)

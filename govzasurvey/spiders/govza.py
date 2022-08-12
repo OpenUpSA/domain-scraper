@@ -55,6 +55,7 @@ class GovzaSpider(scrapy.Spider):
             if e.args[0] == "Response content isn't text":
                 file_item = FileItem()
                 file_item["url"] = response.url
+                file_item["referrer"] = response.headers.get("referer", None)
                 yield file_item
                 return
             else:
