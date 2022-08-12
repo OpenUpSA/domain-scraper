@@ -28,3 +28,5 @@ class NetlocItem(scrapy.Item):
 class FileItem(scrapy.Item):
     url = scrapy.Field()
     label = scrapy.Field()
+    path = scrapy.Field()
+    referrer = scrapy.Field()

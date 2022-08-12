@@ -68,6 +68,7 @@ DEFAULT_REQUEST_HEADERS = {
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'govzasurvey.pipelines.PagePipeline': 300,
+    'govzasurvey.pipelines.FilePipeline': 301,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -99,3 +100,7 @@ SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
 LOG_LEVEL = 'INFO'
 
 DATABASE_URL = os.environ["DATABASE_URL"]
+AWS_S3_BUCKET_NAME = os.environ["AWS_S3_BUCKET_NAME"]
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+AWS_S3_ENDPOINT_URL = os.environ["AWS_S3_ENDPOINT_URL"]

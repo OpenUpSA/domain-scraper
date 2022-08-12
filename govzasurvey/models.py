@@ -48,11 +48,15 @@ class PageObservation(Base):
     page_id = Column(Integer, ForeignKey("page.id"))
     page = relationship("Page", back_populates="observations")
     url = Column(String, nullable=False)
-    referrer = Column(String, nullable=False)
+    referrer = Column(String, nullable=True)
     etag = Column(String, nullable=True)
 
 
 class File(Base):
+    """
+    The content of a file
+    """
+
     __tablename__ = "file"
 
     id = Column(Integer, primary_key=True)
@@ -62,9 +66,13 @@ class File(Base):
     observations = relationship("FileObservation", back_populates="file")
     content_type = Column(String, nullable=False)
     sha256 = Column(String, nullable=False, unique=True)
-    content_disposition_filename = Column(String, nullable=False)
+    key = Column(String, nullable=False, unique=True)
 
 class FileObservation(Base):
+    """
+    An observation of a given file
+    """
+
     __tablename__ = "file_observation"
 
     id = Column(Integer, primary_key=True)
@@ -76,5 +84,7 @@ class FileObservation(Base):
     file_id = Column(Integer, ForeignKey("file.id"))
     file = relationship("File", back_populates="observations")
     url = Column(String, nullable=False)
-    referrer = Column(String, nullable=True)
+    referrer = Column(String, nullable=False)
     etag = Column(String, nullable=True)
+    last_modified = Column(String, nullable=True)
+    content_disposition_unsafe_filename = Column(String, nullable=True)
