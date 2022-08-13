@@ -86,7 +86,10 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 4.0
 
 # Enable and configure HTTP caching (disabled by default)
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-HTTPCACHE_ENABLED = True
+
+# Could be handy for dev or when we get to a point in prod where we're mapping a
+# filesystem folder for it.
+HTTPCACHE_ENABLED = os.environ.get("HTTPCACHE_ENABLED", "false").lower() == "true"
 HTTPCACHE_EXPIRATION_SECS = 60*60*24*5
 HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
@@ -103,4 +106,4 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 AWS_S3_BUCKET_NAME = os.environ["AWS_S3_BUCKET_NAME"]
 AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-AWS_S3_ENDPOINT_URL = os.environ["AWS_S3_ENDPOINT_URL"]
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
