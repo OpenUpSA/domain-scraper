@@ -30,6 +30,8 @@ services:
       - POSTGRES_DB=scraper
     volumes:
       - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   minio:
     image: "minio/minio:RELEASE.2019-10-12T01-39-57Z"
