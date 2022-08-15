@@ -19,37 +19,38 @@ over time to be able to identify changes, but not to provide analytical
 functionality. Search/analysis should probably be built on top of this data or
 some transformation of this data.
 
------
 
-    have a url
-    Have we seen it before?
-      yes
-         do a HEAD request
-         does it have an etag?
-            yes
-              does the previous etag match the current one?
-                yes
-                  skip this file
-                no
-            no
-      no
-    download the file
-      capture any content disposition they send
-    hash it
-    have we seen this hash before?
-      yes
-        skip this file? (can we log somehow that this hash was observed, perhaps for a different url?)
-        maybe store the file row in the db but just don't upload again.
-      no
-    upload the file to s3 with the hash as its key
-    store the file key, etag and hash in db
-
------
-
-questions we want to be able to answer using this schema
+questions we want to be able to answer using this data
 
 - when have we seen this file/page?
 - what are all the versions of this file/page?
 - which pages link to this page/file?
 - which files have this extension?
-- which urls match this
+- which urls match this text?
+- which pages match this text?
+- which file names match this text?
+- which files match this text?
+
+And eventually extract structured data regularly, like keeping a list of open
+tenders up to date.
+
+## Running the scraper
+
+### Using docker-compose (e.g. in development)
+
+    docker-compose run --rm scraper poetry run scrapy crawl govza
+
+
+### Using docker directly (e.g. in production)
+
+Set the following environment variables:
+
+- AWS_S3_BUCKET_NAME
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_S3_ENDPOINT_URL or leave it unset to use the default
+- DATABASE_URL (postgresql://... for postgres)
+
+Run the following command in the container:
+
+    poetry run scrapy crawl govza
