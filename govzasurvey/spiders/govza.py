@@ -43,27 +43,24 @@ class GovzaSpider(scrapy.Spider):
         session.add(scrape)
         session.commit()
 
-        # session.expire(scrape)
-        # session.expunge(scrape)
-        # session.close()
         return super().from_crawler(crawler, scrape, scrape.id, *args, **kwargs)
 
     def parse(self, response):
         try:
             page_text = response.text
         except AttributeError as e:
+            logger.info(f"{ response.url } is not a web page. Yielding as a file instead.")
             if e.args[0] == "Response content isn't text":
                 file_item = FileItem()
                 file_item["url"] = response.url
-                file_item["referrer"] = response.headers.get("referer", None)
-                yield file_item
-                return
+                file_item["referrer"] = response.request.meta["source"]
+                return file_item
             else:
                 raise e
 
         page_item = PageItem()
         page_item['url'] = response.url
-        page_item['referrer'] = response.headers.get("referer", None)
+        page_item['referrer'] = response.request.meta.get("source", None)
         page_item['etag'] = response.headers.get("etag", None)
         page_item['html'] = page_text
         yield page_item
@@ -74,15 +71,6 @@ class GovzaSpider(scrapy.Spider):
             netlocs[netloc] += 1
         else:
             netlocs[netloc] = 1
-
-            # try the robots.txt the first time we see a netloc
-            robotsurl = urlunparse((scheme, netloc, '/robots.txt', None, None, None))
-            yield scrapy.Request(robotsurl, callback=self.parse_robotstxt)
-
-            # yield the netloc the first time we see it
-            netloc_item = NetlocItem()
-            netloc_item['netloc'] = netloc
-            yield netloc_item
 
         for anchor in response.xpath("//a"):
             href = anchor.xpath("@href").extract()
@@ -142,7 +130,10 @@ class GovzaSpider(scrapy.Spider):
                 url = url.split('?')[0]
 
             # crawl it
-            yield scrapy.Request(url)
+            meta = {
+                "source": response.url,
+            }
+            yield scrapy.Request(url, meta=meta)
 
     def parse_robotstxt(self, response):
         item = RobotsTXTItem()
