@@ -13,7 +13,7 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgresql://scraper:scraper@db/scraper
+      - DATABASE_URL=${DATABASE_URL:-postgresql://scraper:scraper@db/scraper}
       - AWS_ACCESS_KEY_ID=minio-access-key
       - AWS_SECRET_ACCESS_KEY=minio-secret-key
       - AWS_S3_BUCKET_NAME=scraper-storage
