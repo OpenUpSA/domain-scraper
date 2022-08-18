@@ -24,7 +24,7 @@ infinite_scrape_safe_netlocs = {
 }
 
 netlocs = dict()
-
+netlocs_warned_skipping = set()
 
 class GovzaSpider(scrapy.Spider):
     name = 'govza'
@@ -112,7 +112,9 @@ class GovzaSpider(scrapy.Spider):
             parsed = urlparse(url)
             netloc_seen = netlocs.get(parsed.netloc, 0)
             if netloc_seen >= 1000 and parsed.netloc not in infinite_scrape_safe_netlocs:
-                logger.info("Skipping %s - already seen enough from %s", url, parsed.netloc)
+                if parsed.netloc not in netlocs_warned_skipping:
+                    logger.info("Skipping %s - already seen enough from %s", url, parsed.netloc)
+                    netloc_warned_skipping.add(parsed.netloc)
                 continue
 
             # log but skip obvious non-html (before stripping QS)
