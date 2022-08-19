@@ -95,7 +95,8 @@ HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-DOWNLOAD_MAXSIZE = 1024 * 1024 * 500 # 500KB
+MEGABYTE = 1024 * 1024
+DOWNLOAD_MAXSIZE = 50 * MEGABYTE
 
 # https://docs.scrapy.org/en/latest/topics/broad-crawls.html#use-the-right-scheduler-priority-queue
 SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
