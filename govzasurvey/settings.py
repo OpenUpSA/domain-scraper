@@ -94,6 +94,7 @@ HTTPCACHE_EXPIRATION_SECS = 60*60*24*5
 HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+HTTPCACHE_POLICY = os.environ.get("HTTPCACHE_POLICY", "scrapy.extensions.httpcache.RFC2616Policy")
 
 MEGABYTE = 1024 * 1024
 DOWNLOAD_MAXSIZE = 50 * MEGABYTE
