@@ -7,6 +7,7 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from ..models import Scrape
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +88,25 @@ class GovzaSpider(scrapy.Spider):
             else:
                 label = None
 
-            # Make it absolute if it is not
+            parsed_href = urlparse(href)
+
+            # Make it absolute if it is not            
             url = response.urljoin(href)
+
+            if parsed_href.netloc == '':
+                # If the path is relative
+                href_first_component_match = re.search("^([^/]+)/", parsed_href.path)
+
+                if href_first_component_match:
+                    # if we match a directory component in the found href
+                    href_first_component = href_first_component_match.group(1)
+                    repeating_component = f"{ href_first_component }/{ href_first_component }"
+                    if repeating_component in url and repeating_component not in parsed_href.path:
+                        # If the directory component repeats in the combined URL, but not because
+                        # it was already repeating in the found URL
+                        logger.info(f"Skipping { href } from { response.url} to avoid infinite crawl")
+                        continue
+
 
             # If it's an email link, use the domain as the URL
             if url.startswith('mailto:'):

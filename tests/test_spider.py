@@ -53,11 +53,9 @@ def test_recursive_relative_paths():
                 extracted_links.add(item.url)
                 assert "/mngeni/mngeni/" not in item.url 
         
-        expected_url = "https://www.umngeni.gov.za/mngeni/mngeni/documents.php?category=Public%20Notices&sub=Tarrifs"
-        assert expected_url in extracted_links
 
 def test_emit_requests_to_crawl():
-    url = "https://www.umngeni.gov.za/mngeni/documents.php?category=Public%20Notices&sub=Tarrifs"
+    url = "https://www.umngeni.gov.za/"
     with open("tests/test_spider_files/test_emit_requests_to_crawl.html") as body_file:
         response = mock_response(url, body_file.read())
         spider = GovzaSpider(Scrape(), 1)
@@ -67,9 +65,10 @@ def test_emit_requests_to_crawl():
             if type(item) == Request:
                 extracted_links.add(item.url)
 
-        assert len(extracted_links) == 4
+        assert 'http://mail.gov.za' in extracted_links
         assert 'https://twitter.com/UmngeniLocal' in extracted_links
         assert 'https://www.umngeni.gov.za/contact.php' in extracted_links
-        assert 'https://www.umngeni.gov.za/mngeni/history_of_umngeni.php' in extracted_links
-        assert 'https://www.umngeni.gov.za/mngeni/mngeni/documents.php' in extracted_links
+        assert 'https://www.umngeni.gov.za/history_of_umngeni.php' in extracted_links
+        assert 'https://www.umngeni.gov.za/mngeni/documents.php' in extracted_links
+        assert len(extracted_links) == 5
 
