@@ -35,7 +35,7 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 4
 # CONCURRENT_REQUESTS_PER_IP = 4
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
@@ -101,6 +101,9 @@ DOWNLOAD_MAXSIZE = 50 * MEGABYTE
 
 # https://docs.scrapy.org/en/latest/topics/broad-crawls.html#use-the-right-scheduler-priority-queue
 SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
+DEPTH_PRIORITY = 1
+SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'
+SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
 
 LOG_LEVEL = 'INFO'
 
