@@ -10,8 +10,6 @@ services:
         GROUP_ID: ${GROUP_ID:-1001}
     volumes:
       - .:/app
-    depends_on:
-      - db
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://scraper:scraper@db/scraper}
       - AWS_ACCESS_KEY_ID=minio-access-key
